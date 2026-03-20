@@ -1,17 +1,26 @@
-import { Link } from 'react-router-dom';
-import { useCartStore } from '@/store/cartStore';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Trash2, Minus, Plus } from 'lucide-react';
+import { Link } from "react-router-dom";
+import { useCartStore } from "@/store/cartStore";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Trash2, Minus, Plus } from "lucide-react";
 
 export default function CartPage() {
-  const { items, removeItem, updateQuantity, getTotalPrice, clearCart } = useCartStore();
+  const { items, removeItem, updateQuantity, getTotalPrice, clearCart } =
+    useCartStore();
 
   if (items.length === 0) {
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center">
         <h2 className="text-2xl font-bold">Your cart is empty</h2>
-        <p className="mt-2 text-muted-foreground">Add some products to your cart</p>
+        <p className="mt-2 text-muted-foreground">
+          Add some products to your cart
+        </p>
         <Link to="/products">
           <Button className="mt-4">Browse Products</Button>
         </Link>
@@ -44,36 +53,45 @@ export default function CartPage() {
                 </div>
                 <div className="flex flex-1 flex-col justify-between">
                   <div>
-                    <Link to={`/products/${item._id}`} className="font-medium hover:underline">
-                      {item.name}
+                    <Link to={`/products/${item._id}`}>
+                      {typeof item.name === "object"
+                        ? item.name.name || item.name.en
+                        : item.name}
                     </Link>
-                    <p className="text-sm text-muted-foreground">{item.category}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {typeof item.category === "object"
+                        ? item.category.name || item.category.en
+                        : item.category}
+                    </p>
                   </div>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Button
                         variant="outline"
                         size="icon"
-                        onClick={() => updateQuantity(item._id, item.quantity - 1)}
-                      >
+                        onClick={() =>
+                          updateQuantity(item._id, item.quantity - 1)
+                        }>
                         <Minus className="h-4 w-4" />
                       </Button>
                       <span className="w-8 text-center">{item.quantity}</span>
                       <Button
                         variant="outline"
                         size="icon"
-                        onClick={() => updateQuantity(item._id, item.quantity + 1)}
-                      >
+                        onClick={() =>
+                          updateQuantity(item._id, item.quantity + 1)
+                        }>
                         <Plus className="h-4 w-4" />
                       </Button>
                     </div>
                     <div className="flex items-center gap-4">
-                      <span className="font-bold">${(item.price * item.quantity).toFixed(2)}</span>
+                      <span className="font-bold">
+                        ${(item.price * item.quantity).toFixed(2)}
+                      </span>
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => removeItem(item._id)}
-                      >
+                        onClick={() => removeItem(item._id)}>
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
                     </div>

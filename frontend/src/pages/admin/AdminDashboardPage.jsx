@@ -1,74 +1,49 @@
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, Package, ShoppingCart, DollarSign } from 'lucide-react';
-import api from '@/services/api';
+import { Users, Package, ShoppingCart, DollarSign, AlertTriangle, TrendingUp } from 'lucide-react';
+import { Loading } from '@/components/ui/loading';
+import { useProductStats, useUserStats, useOrderStats } from '@/hooks/useApi';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+
+const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
 export default function AdminDashboardPage() {
-  const [stats, setStats] = useState({
-    totalUsers: 0,
-    totalProducts: 0,
-    totalOrders: 0,
-    totalRevenue: 0,
-  });
-  const [loading, setLoading] = useState(true);
+  const { data: productStats, isLoading: loadingProducts } = useProductStats();
+  const { data: userStats, isLoading: loadingUsers } = useUserStats();
+  const { data: orderStats, isLoading: loadingOrders } = useOrderStats();
 
-  useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const [userStats, productStats] = await Promise.all([
-          api.get('/users/stats'),
-          api.get('/products?limit=1000'),
-        ]);
-        
-        setStats({
-          totalUsers: userStats.data.data.totalUsers,
-          totalProducts: productStats.data.data.total,
-          totalOrders: 0,
-          totalRevenue: 0,
-        });
-      } catch (error) {
-        console.error('Failed to fetch stats:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchStats();
-  }, []);
+  const isLoading = loadingProducts || loadingUsers || loadingOrders;
+
+  if (isLoading) return <Loading />;
+
+  const products = productStats?.data || {};
+  const users = userStats?.data || {};
+  const orders = orderStats?.data || {};
+
+  const orderStatusData = Object.entries(orders.ordersByStatus || {}).map(([name, value]) => ({
+    name: name.charAt(0).toUpperCase() + name.slice(1),
+    value
+  }));
 
   const cards = [
-    { title: 'Total Users', value: stats.totalUsers, icon: Users, color: 'text-blue-500' },
-    { title: 'Total Products', value: stats.totalProducts, icon: Package, color: 'text-green-500' },
-    { title: 'Total Orders', value: stats.totalOrders, icon: ShoppingCart, color: 'text-purple-500' },
-    { title: 'Total Revenue', value: `$${stats.totalRevenue.toLocaleString()}`, icon: DollarSign, color: 'text-yellow-500' },
+    { title: 'Total Users', value: users.totalUsers || 0, icon: Users, color: 'text-blue-500', bg: 'bg-blue-500/10' },
+    { title: 'Total Products', value: products.totalProducts || 0, icon: Package, color: 'text-green-500', bg: 'bg-green-500/10' },
+    { title: 'Total Orders', value: orders.totalOrders || 0, icon: ShoppingCart, color: 'text-purple-500', bg: 'bg-purple-500/10' },
+    { title: 'Revenue', value: `$${(orders.totalRevenue || 0).toLocaleString()}`, icon: DollarSign, color: 'text-yellow-500', bg: 'bg-yellow-500/10' },
   ];
-
-  if (loading) {
-    return (
-      <div className="animate-pulse space-y-4">
-        <h1 className="text-3xl font-bold">Dashboard</h1>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {[...Array(4)].map((_, i) => (
-            <Card key={i}>
-              <CardContent className="h-32" />
-            </Card>
-          ))}
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div>
       <h1 className="mb-8 text-3xl font-bold">Dashboard</h1>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
         {cards.map((card) => (
           <Card key={card.title}>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                {card.title}
-              </CardTitle>
-              <card.icon className={`h-4 w-4 ${card.color}`} />
+              <CardTitle className="text-sm font-medium text-muted-foreground">{card.title}</CardTitle>
+              <div className={`p-2 rounded-lg ${card.bg}`}>
+                <card.icon className={`h-4 w-4 ${card.color}`} />
+              </div>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{card.value}</div>
@@ -77,39 +52,104 @@ export default function AdminDashboardPage() {
         ))}
       </div>
 
-      <div className="mt-8 grid gap-8 lg:grid-cols-2">
+      <div className="grid gap-6 lg:grid-cols-2 mb-8">
         <Card>
           <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5" /> Orders by Status
+            </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2">
-            <div className="text-sm text-muted-foreground">
-              Use the sidebar to manage products, users, and orders.
-            </div>
+          <CardContent>
+            {orderStatusData.length > 0 ? (
+              <div className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={orderStatusData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={100}
+                      fill="#8884d8"
+                      paddingAngle={5}
+                      dataKey="value"
+                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    >
+                      {orderStatusData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <p className="text-center text-muted-foreground py-8">No order data available</p>
+            )}
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle>System Status</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-orange-500" /> Inventory Alerts
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-sm">API Status</span>
-                <span className="flex h-2 w-2">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
-                  <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500" />
-                </span>
+            <div className="space-y-4">
+              <div className="flex justify-between items-center p-4 bg-red-50 rounded-lg">
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 rounded-full bg-red-500" />
+                  <span className="font-medium">Out of Stock</span>
+                </div>
+                <span className="text-xl font-bold text-red-600">{products.outOfStock || 0}</span>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm">Database</span>
-                <span className="text-sm text-green-500">Connected</span>
+              <div className="flex justify-between items-center p-4 bg-orange-50 rounded-lg">
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 rounded-full bg-orange-500" />
+                  <span className="font-medium">Low Stock</span>
+                </div>
+                <span className="text-xl font-bold text-orange-600">{products.lowStock || 0}</span>
+              </div>
+              <div className="flex justify-between items-center p-4 bg-green-50 rounded-lg">
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 rounded-full bg-green-500" />
+                  <span className="font-medium">Active Products</span>
+                </div>
+                <span className="text-xl font-bold text-green-600">{products.active || 0}</span>
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Recent Orders</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {orders.recentOrders?.length > 0 ? (
+            <div className="space-y-4">
+              {orders.recentOrders.map((order) => (
+                <div key={order._id} className="flex justify-between items-center p-4 border rounded-lg">
+                  <div>
+                    <p className="font-medium">{order.orderNumber}</p>
+                    <p className="text-sm text-muted-foreground">{order.user?.name || 'Guest'}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-bold">${order.total?.toFixed(2)}</p>
+                    <span className={`text-xs px-2 py-1 rounded ${order.status === 'delivered' ? 'bg-green-100 text-green-800' : order.status === 'cancelled' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                      {order.status}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-center text-muted-foreground py-8">No recent orders</p>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

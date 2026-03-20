@@ -11,16 +11,18 @@ Full-stack e-commerce platform with React frontend and Node.js/Express backend.
 - **Database**: MongoDB with Mongoose ODM
 - **Authentication**: JWT (Access + Refresh tokens)
 - **Password Hashing**: bcryptjs
-- **File Handling**: multer
+- **File Storage**: Cloudflare R2 (S3-compatible)
 
 ### Frontend
 - **Build Tool**: Vite
 - **Framework**: React 18
+- **Data Fetching**: TanStack Query v5
 - **State Management**: Zustand with persistence
 - **Routing**: React Router v6
 - **Styling**: Tailwind CSS
 - **UI Components**: shadcn/ui (Radix UI primitives)
 - **HTTP Client**: Axios
+- **Charts**: Recharts
 
 ## Architecture
 
@@ -29,75 +31,14 @@ Full-stack e-commerce platform with React frontend and Node.js/Express backend.
 Routes → Controllers → Services → Models
 ```
 
-- **Routes**: HTTP method definitions, route parameters
-- **Controllers**: Request/response handling only
-- **Services**: Business logic, database operations
-- **Models**: Mongoose schemas, validations
-
-### Backend Structure
+### Frontend Architecture
 ```
-backend/
-├── src/
-│   ├── controllers/     # Request handlers
-│   ├── services/        # Business logic
-│   ├── routes/          # API routes
-│   ├── models/          # Database schemas
-│   ├── middlewares/     # Auth, error handling
-│   ├── utils/           # Helper functions
-│   ├── config/          # DB connection
-│   └── app.js           # Express app
-├── server.js
-└── .env
+TanStack Query → Custom Hooks → Components
 ```
 
-### Frontend Structure
-```
-frontend/
-├── src/
-│   ├── app/             # App routing
-│   ├── pages/           # Route pages
-│   ├── components/      # UI components
-│   │   └── ui/          # shadcn components
-│   ├── layouts/         # Layout components
-│   ├── store/           # Zustand stores
-│   ├── services/        # API calls
-│   ├── hooks/           # Custom hooks
-│   └── lib/             # Utilities
-├── index.html
-└── .env
-```
+## Backend Modules
 
-## API Design
-
-### Response Format
-```json
-{
-  "success": true,
-  "data": {},
-  "message": ""
-}
-```
-
-### Error Format
-```json
-{
-  "success": false,
-  "message": "Error description"
-}
-```
-
-### HTTP Status Codes
-- `200` - Success
-- `201` - Created
-- `400` - Bad Request
-- `401` - Unauthorized
-- `403` - Forbidden
-- `404` - Not Found
-- `500` - Server Error
-
-## Features
-
-### Authentication
+### 1. Authentication (Auth)
 - [x] User registration with email validation
 - [x] User login with JWT tokens
 - [x] Access token (15 min expiry)
@@ -107,12 +48,14 @@ frontend/
 - [x] Protected routes middleware
 - [x] Role-based access control (user/admin)
 
-### User Module
+### 2. User Module
+- [x] Get all users (admin)
 - [x] Get user profile
 - [x] Update user profile
-- [x] User logout
+- [x] Delete user (admin)
+- [x] User stats
 
-### Product Module
+### 3. Product Module
 - [x] Create product (admin)
 - [x] Get all products with pagination
 - [x] Get single product
@@ -121,104 +64,169 @@ frontend/
 - [x] Search by name/description
 - [x] Filter by category
 - [x] Filter by price range
-- [x] Get all categories
+- [x] Low stock tracking
+- [x] Product variants (basic)
+- [x] Featured products
+- [x] Product stats
 
-### Review Module
+### 4. Category Module
+- [x] CRUD categories (admin)
+- [x] Nested categories (parent-child)
+- [x] Category tree structure
+- [x] Active/inactive status
+
+### 5. Coupon Module
+- [x] Create discount codes (admin)
+- [x] Percentage & fixed discounts
+- [x] Usage limits
+- [x] Expiry dates
+- [x] Minimum order value
+- [x] Max discount cap
+- [x] Coupon validation & application
+
+### 6. Review Module
 - [x] Add review to product (authenticated)
 - [x] One review per user per product
 - [x] Automatic rating aggregation
+- [x] Admin review management
+- [x] Review approval status
 
-### Cart Module
-- [x] Add items to cart
-- [x] Update item quantity
-- [x] Remove items
-- [x] Clear cart
-- [x] Persistent storage (localStorage)
-- [x] Total price calculation
-- [x] Total items count
+### 7. Order Module
+- [x] Create order
+- [x] Get orders (admin)
+- [x] Get my orders (user)
+- [x] Update order status
+- [x] Order stats
+- [x] Payment tracking
+- [x] Coupon application
+
+### 8. Settings Module
+- [x] Store information
+- [x] Currency settings
+- [x] Tax settings
+- [x] Shipping settings
+- [x] Low stock threshold
+
+## Frontend Features
 
 ### Admin Panel
-- [x] Dashboard overview
+- [x] Dashboard with stats & charts
 - [x] Product management (CRUD)
-- [x] User management (view)
-- [ ] Order management
-- [ ] Analytics dashboard
+- [x] Category management (CRUD)
+- [x] Coupon management (CRUD)
+- [x] Review management
+- [x] User management
+- [x] Order management with status update
+- [x] Settings page
 
-## Frontend State Management
+### UI Components
+- [x] Loading states (skeleton, spinner)
+- [x] Empty states
+- [x] Toast notifications
+- [x] Pagination
+- [x] Search & filters
+- [x] Dialog forms
 
-### Zustand Stores
+### Data Fetching
+- [x] TanStack Query integration
+- [x] Custom hooks (`useApi`, `useProducts`, etc.)
+- [x] Automatic cache invalidation
+- [x] Optimistic updates
 
-#### authStore
+## API Endpoints
+
+### Auth (`/api/auth`)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | /register | Register user |
+| POST | /login | Login user |
+| POST | /refresh-token | Refresh token |
+| GET | /profile | Get profile |
+| PUT | /profile | Update profile |
+| POST | /logout | Logout |
+
+### Products (`/api/products`)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | / | Get all products |
+| GET | /:id | Get product |
+| GET | /categories | Get categories |
+| GET | /stats | Get stats (admin) |
+| GET | /low-stock | Low stock products |
+| POST | / | Create product |
+| PUT | /:id | Update product |
+| DELETE | /:id | Delete product |
+
+### Categories (`/api/categories`)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | / | Get all |
+| GET | /tree | Category tree |
+| GET | /:id | Get category |
+| POST | / | Create |
+| PUT | /:id | Update |
+| DELETE | /:id | Delete |
+
+### Coupons (`/api/coupons`)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | / | Get all |
+| POST | /validate | Validate coupon |
+| POST | / | Create |
+| PUT | /:id | Update |
+| DELETE | /:id | Delete |
+
+### Reviews (`/api/reviews`)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | /product/:id | Product reviews |
+| GET | / | All reviews (admin) |
+| POST | /product/:id | Add review |
+| DELETE | /:id | Delete |
+
+### Orders (`/api/orders`)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | / | Get all (admin) |
+| GET | /my-orders | My orders |
+| GET | /stats | Order stats |
+| GET | /:id | Get order |
+| POST | / | Create order |
+| PUT | /:id/status | Update status |
+
+### Settings (`/api/settings`)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | / | Get settings |
+| PUT | / | Update settings |
+
+## Frontend Hooks
+
+### useApi.js
 ```javascript
-{
-  user: User | null,
-  isAuthenticated: boolean,
-  isLoading: boolean,
-  error: string | null,
-  
-  login(email, password),
-  register(name, email, password),
-  logout(),
-  fetchProfile(),
-  clearError()
-}
+useApiQuery({ endpoint, params, key, enabled })
+useApiQueryById({ endpoint, id, key, enabled })
+useApiMutation({ endpoint, method, invalidate })
+useApiMutationById({ endpoint, method, invalidate })
+useApiDelete({ endpoint, invalidate })
 ```
 
-#### productStore
+### useApi.js (specific)
 ```javascript
-{
-  products: Product[],
-  currentProduct: Product | null,
-  categories: string[],
-  totalPages: number,
-  currentPage: number,
-  total: number,
-  isLoading: boolean,
-  error: string | null,
-  filters: { keyword, category, minPrice, maxPrice },
-  
-  fetchProducts(params),
-  fetchProductById(id),
-  fetchCategories(),
-  createProduct(data),
-  updateProduct(id, data),
-  deleteProduct(id),
-  addReview(productId, reviewData),
-  setFilters(filters),
-  clearFilters(),
-  clearError()
-}
+useProducts(params)
+useProduct(id)
+useCategories()
+useCategoryTree()
+useCoupons()
+useReviews(params)
+useOrders(params)
+useUsers(params)
+useSettings()
+useCreateProduct()
+useUpdateProduct()
+useDeleteProduct()
+// ... etc
 ```
-
-#### cartStore
-```javascript
-{
-  items: CartItem[],
-  
-  addItem(product, quantity),
-  removeItem(productId),
-  updateQuantity(productId, quantity),
-  clearCart(),
-  getTotalItems(),
-  getTotalPrice()
-}
-```
-
-## Security
-
-### Backend
-- Password hashing (bcrypt, salt rounds: 10)
-- JWT token verification
-- Input validation via Mongoose
-- Error handling middleware
-- Role-based authorization
-- Environment variables for secrets
-
-### Frontend
-- Token storage in localStorage
-- Axios interceptors for auth
-- Protected route components
-- Input sanitization
 
 ## Environment Variables
 
@@ -231,6 +239,11 @@ JWT_SECRET=your-jwt-secret
 JWT_REFRESH_SECRET=your-refresh-secret
 JWT_EXPIRE=15m
 JWT_REFRESH_EXPIRE=7d
+R2_ACCOUNT_ID=your-r2-account-id
+R2_ACCESS_KEY_ID=your-r2-access-key
+R2_SECRET_ACCESS_KEY=your-r2-secret
+R2_BUCKET_NAME=your-bucket
+R2_PUBLIC_URL=https://...
 ```
 
 ### Frontend (.env)
@@ -239,18 +252,13 @@ VITE_API_URL=http://localhost:5000/api
 ```
 
 ## Future Enhancements
-- [ ] Order module with payment integration
-- [ ] Wishlist feature
-- [ ] Image upload to Cloudinary
+- [ ] Real payment gateway integration
 - [ ] Email notifications
 - [ ] Rate limiting
-- [ ] Refresh token rotation
 - [ ] Infinite scroll pagination
 - [ ] Dark mode toggle
-- [ ] Advanced search with filters
+- [ ] Wishlist feature
 - [ ] Order tracking
-- [ ] Payment gateway integration
-- [ ] Admin analytics dashboard
-- [ ] Email verification
-- [ ] Password reset functionality
 - [ ] Social login (OAuth)
+- [ ] Email verification
+- [ ] Password reset

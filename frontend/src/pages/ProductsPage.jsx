@@ -1,10 +1,16 @@
-import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { useProductStore } from '@/store/productStore';
-import { useCartStore } from '@/store/cartStore';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { useProductStore } from "@/store/productStore";
+import { useCartStore } from "@/store/cartStore";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 export default function ProductsPage() {
   const {
@@ -19,8 +25,9 @@ export default function ProductsPage() {
     setFilters,
     clearFilters,
   } = useProductStore();
+
   const { addItem } = useCartStore();
-  const [searchKeyword, setSearchKeyword] = useState('');
+  const [searchKeyword, setSearchKeyword] = useState("");
 
   useEffect(() => {
     fetchCategories();
@@ -39,6 +46,7 @@ export default function ProductsPage() {
   };
 
   const handlePageChange = (page) => {
+    setFilters({ page });
     fetchProducts({ page });
   };
 
@@ -46,6 +54,7 @@ export default function ProductsPage() {
     <div>
       <h1 className="mb-8 text-3xl font-bold">Products</h1>
 
+      {/* Filters */}
       <div className="mb-8 flex flex-col gap-4 md:flex-row">
         <form onSubmit={handleSearch} className="flex flex-1 gap-2">
           <Input
@@ -59,22 +68,28 @@ export default function ProductsPage() {
 
         <select
           className="rounded-md border border-input bg-background px-3 py-2"
-          value={filters.category}
-          onChange={(e) => handleCategoryChange(e.target.value)}
-        >
+          value={filters.category || ""}
+          onChange={(e) => handleCategoryChange(e.target.value)}>
           <option value="">All Categories</option>
           {categories.map((cat) => (
-            <option key={cat} value={cat}>
-              {cat}
+            <option key={cat._id} value={cat._id}>
+              {cat.name} {/* Ensure `name` is a string */}
             </option>
           ))}
         </select>
 
-        <Button variant="outline" onClick={() => { clearFilters(); setSearchKeyword(''); fetchProducts(); }}>
+        <Button
+          variant="outline"
+          onClick={() => {
+            clearFilters();
+            setSearchKeyword("");
+            fetchProducts();
+          }}>
           Clear Filters
         </Button>
       </div>
 
+      {/* Products */}
       {isLoading ? (
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {[...Array(8)].map((_, i) => (
@@ -100,7 +115,11 @@ export default function ProductsPage() {
                   {product.images?.[0] && (
                     <img
                       src={product.images[0]}
-                      alt={product.name}
+                      alt={
+                        typeof product.name === "object"
+                          ? product.name.en
+                          : product.name
+                      }
                       className="h-full w-full object-cover"
                     />
                   )}
@@ -108,9 +127,17 @@ export default function ProductsPage() {
               </Link>
               <CardHeader>
                 <Link to={`/products/${product._id}`}>
-                  <CardTitle className="line-clamp-1">{product.name}</CardTitle>
+                  <CardTitle className="line-clamp-1">
+                    {typeof product.name === "object"
+                      ? product.name.en
+                      : product.name}
+                  </CardTitle>
                 </Link>
-                <p className="text-sm text-muted-foreground">{product.category}</p>
+                <p className="text-sm text-muted-foreground">
+                  {typeof product.category === "object"
+                    ? product.category.name
+                    : product.category}
+                </p>
               </CardHeader>
               <CardContent>
                 <div className="flex items-center justify-between">
@@ -126,9 +153,8 @@ export default function ProductsPage() {
                 <Button
                   className="w-full"
                   onClick={() => addItem(product)}
-                  disabled={product.stock === 0}
-                >
-                  {product.stock === 0 ? 'Out of Stock' : 'Add to Cart'}
+                  disabled={product.stock === 0}>
+                  {product.stock === 0 ? "Out of Stock" : "Add to Cart"}
                 </Button>
               </CardFooter>
             </Card>
@@ -136,15 +162,15 @@ export default function ProductsPage() {
         </div>
       )}
 
+      {/* Pagination */}
       {totalPages > 1 && (
         <div className="mt-8 flex justify-center gap-2">
           {[...Array(totalPages)].map((_, i) => (
             <Button
               key={i}
-              variant={currentPage === i + 1 ? 'default' : 'outline'}
+              variant={currentPage === i + 1 ? "default" : "outline"}
               size="sm"
-              onClick={() => handlePageChange(i + 1)}
-            >
+              onClick={() => handlePageChange(i + 1)}>
               {i + 1}
             </Button>
           ))}
